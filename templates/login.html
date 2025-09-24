@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+<!-- 
+  Extends the 'base.html' template to maintain a consistent layout 
+  across the application. 
+-->
+
+{% block title %}Login{% endblock %}
+<!-- 
+  This block sets the page title to "Login", which will appear 
+  in the <title> tag in base.html.
+-->
+
+{% block content %}
+<!-- Main content for the login page -->
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+
+      <!-- Card layout for login form -->
+      <div class="card shadow rounded-4">
+        <div class="card-body p-4">
+          
+          <!-- Page heading -->
+          <h2 class="text-center mb-4 fw-bold text-primary">Login</h2>
+
+          <!-- =================== FLASH MESSAGES =================== -->
+          <!-- 
+            Flash messages are used to display feedback like:
+            - Invalid email or password
+            - Login successful
+          -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                  <!-- 
+                    If category is 'success' -> green alert,
+                    Otherwise -> red alert
+                  -->
+                  {{ message }}
+                  <!-- Button to close the alert -->
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+          <!-- ===================================================== -->
+
+          <!-- =================== LOGIN FORM =================== -->
+          <form method="POST" novalidate>
+            <!-- Hidden CSRF token to protect against cross-site attacks -->
+            {{ form.hidden_tag() }}
+
+            <!-- Email field -->
+            <div class="mb-3">
+              {{ form.email.label(class="form-label") }} 
+              <!-- Label for the email field -->
+
+              {{ form.email(class="form-control", placeholder="Enter your email") }}
+              <!-- Email input field -->
+
+              {% if form.email.errors %}
+                <!-- Display first validation error if the email field has any -->
+                <div class="text-danger small">{{ form.email.errors[0] }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Password field -->
+            <div class="mb-3">
+              {{ form.password.label(class="form-label") }} 
+              <!-- Label for the password field -->
+
+              {{ form.password(class="form-control", placeholder="Enter your password") }}
+              <!-- Password input field -->
+
+              {% if form.password.errors %}
+                <!-- Display first validation error if the password field has any -->
+                <div class="text-danger small">{{ form.password.errors[0] }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Submit button -->
+            <div class="d-grid">
+              {{ form.submit(class_="btn btn-success btn-lg") }}
+              <!-- 
+                class_ is used instead of class because 'class' is a reserved keyword in Python.
+                'btn-success btn-lg' creates a big green button.
+              -->
+            </div>
+          </form>
+          <!-- ===================================================== -->
+
+          <!-- Redirect to registration for new users -->
+          <p class="text-center mt-4">
+            Don't have an account?
+            <a href="{{ url_for('register') }}" class="text-decoration-none text-primary fw-semibold">Register here</a>.
+            <!-- Dynamically generates the URL for the register route -->
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

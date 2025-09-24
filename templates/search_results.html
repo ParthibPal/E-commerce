@@ -1,0 +1,50 @@
+{% block content %}
+<div class="container py-5">
+    <h2 class="text-center mb-4 fw-bold text-primary">🔍 Search Results for "{{ query }}"</h2>
+
+    {% if results %}
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for item in results %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 rounded-4">
+                <img src="{{ url_for('static', filename='images/' ~ item.image) }}" class="card-img-top rounded-top-4"
+                    style="height: 200px; object-fit: cover;" alt="{{ item.name }}">
+                <div class="card-body">
+                    <h5 class="card-title fw-semibold text-dark">
+                        {% if item.id %}
+                        <a href="{{ url_for('product_detail', product_id=item.id) }}"
+                            class="text-decoration-none text-dark">
+                            {{ item.name }}
+                        </a>
+                        {% else %}
+                        {{ item.name }}
+                        {% endif %}
+                    </h5>
+                    <p class="card-text text-muted small">
+                        {{ item.description[:100] if item.description else item.product_description[:100] }}...
+                    </p>
+                    <p class="card-text fw-bold text-success">₹{{ item.price }}</p>
+                    {% if item.quantity %}
+                    <p class="card-text text-secondary small">Quantity: {{ item.quantity }}</p>
+                    <p class="card-text fw-bold text-dark">Total: ₹{{ item.price * item.quantity }}</p>
+                    {% endif %}
+                </div>
+                {% if item.id %}
+                <div class="card-footer bg-transparent border-0 text-end">
+                    <a href="{{ url_for('product_detail', product_id=item.id) }}"
+                        class="btn btn-outline-primary btn-sm">
+                        View Product
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        No results found for "<strong>{{ query }}</strong>".
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

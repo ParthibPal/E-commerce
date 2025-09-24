@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+  <style>
+    .product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      padding: 40px;
+      justify-items: center;
+    }
+
+    .product-card {
+      background-color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-image {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background-color: #f0f0f0;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-content {
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-content h3 {
+      font-size: 1.3em;
+      margin-bottom: 10px;
+      color: #2e7d32;
+    }
+
+    .card-content p {
+      font-size: 0.95em;
+      margin-bottom: 8px;
+      color: #444;
+    }
+
+    .add-to-cart {
+      margin-top: auto;
+      padding: 10px 16px;
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .add-to-cart:hover {
+      background-color: #388E3C;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <h2 style="text-align:center; margin-top: 30px;">Our Products</h2>
+  <div class="product-list">
+    {% for product in products %}
+    <div class="product-card">
+      <div class="card-image">
+        <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.name }}">
+      </div>
+      <div class="card-content">
+        <h3>{{ product.name }}</h3>
+        <p><strong>Description:</strong> {{ product.description }}</p>
+        <p><strong>Price:</strong> ₹{{ product.price }}</p>
+        <p><strong>Category:</strong> {{ product.category }}</p>
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-outline-success mt-2 mb-2">
+          View Details
+        </a>
+        
+              
+        <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="add-to-cart">Add to Cart</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+
+
+
+
+

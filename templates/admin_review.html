@@ -1,0 +1,37 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Customer Reviews</h2>
+
+    {% if reviews %}
+    {% for review in reviews %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <!-- Product name -->
+            <h5 class="card-title">{{ review.product.name }}</h5>
+
+            <!-- Review content -->
+            <p class="card-text">{{ review.content }}</p>
+
+            <!-- Rating -->
+            <p class="card-text"><strong>Rating:</strong> {{ review.rating }} / 5</p>
+
+            <!-- Reviewer and date -->
+            <p class="card-text">
+                <em>By {{ review.user.username }} on {{ review.created_at.strftime("%d %B %Y, %I:%M %p") }}</em>
+            </p>
+
+            <!-- Delete button -->
+            <form method="POST" action="{{ url_for('delete_review', review_id=review.id) }}"
+                onsubmit="return confirm('Delete this review?');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No reviews yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h2 class="text-center mb-5 fw-bold">🛒 Your Shopping Cart</h2>
+
+  {% if cart_items %}
+  {% for item in cart_items %}
+  <div class="card mb-4 border-0 shadow-sm rounded-4">
+    <div class="row g-0 align-items-center">
+      <!-- Product Image -->
+      <div class="col-md-3 text-center p-3">
+        <img src="{{ url_for('static', filename='images/' ~ item.product_image) }}"
+          class="img-thumbnail rounded-3 shadow-sm" style="max-height: 150px; object-fit: cover;"
+          alt="{{ item.product_name }}">
+      </div>
+
+      <!-- Product Details -->
+      <div class="col-md-6">
+        <div class="card-body">
+          <h5 class="card-title text-primary fw-semibold">{{ item.product_name }}</h5>
+          <p class="card-text text-muted small">{{ item.product_description }}</p>
+          <p class="card-text mb-2">
+            <span class="badge bg-success">₹{{ item.product_price }}</span>
+            <span class="ms-2 text-secondary">x {{ item.quantity }}</span>
+          </p>
+          <p class="card-text fw-bold text-dark">
+            Subtotal: ₹{{ item.quantity * item.product_price }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Update Quantity / Remove -->
+      <div class="col-md-3 text-end pe-4">
+        <form action="{{ url_for('update_cart', cart_id=item.id) }}" method="POST" class="mb-2">
+          <div class="input-group input-group-sm">
+            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control">
+            <button type="submit" class="btn btn-outline-success">Update</button>
+          </div>
+        </form>
+        <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}" class="btn btn-outline-danger btn-sm">
+          Remove
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Total & Checkout Button -->
+  <div class="text-end mt-5">
+    <h4 class="fw-bold">Total: ₹{{ total_price }}</h4>
+    <button id="checkoutBtn" class="btn btn-primary btn-lg mt-3">
+      <i class="fas fa-credit-card me-2"></i> Proceed to Checkout
+    </button>
+  </div>
+
+  {% else %}
+  <div class="text-center py-5">
+    <h4 class="text-muted">Your cart is empty.</h4>
+    <a href="{{ url_for('home') }}" class="btn btn-outline-primary mt-3">Go Shopping</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Razorpay JS SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (!checkoutBtn) return;
+
+    checkoutBtn.addEventListener('click', async function () {
+      try {
+        // Pass total_price from Flask safely to JS
+        const totalPrice = `{{ total_price | default(0) | float }}`;
+        console.log("Total Price:", totalPrice);
+
+        // Step 1: Create order on backend
+        const response = await fetch("/create_order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: totalPrice })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create order.");
+        }
+
+        // Step 2: Configure Razorpay options
+        const options = {
+          key: "{{ RAZORPAY_KEY_ID }}",  // Razorpay key from Flask
+          amount: data.amount,           // Amount in paise
+          currency: "INR",
+          name: "Local Service Marketplace",
+          description: "Checkout Payment",
+          order_id: data.id,             // Razorpay order ID
+          handler: async function (paymentResponse) {
+            const verifyRes = await fetch("/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(paymentResponse)
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok) {
+              window.location.href = verifyData.redirect_url;  // 👈 Redirect to orders
+            } else {
+              alert("Payment verification failed. Please contact support.");
+            }
+          }
+          ,
+          prefill: {
+            name: "{{ current_user.name if current_user.is_authenticated else '' }}",
+            email: "{{ current_user.email if current_user.is_authenticated else '' }}",
+            contact: ""
+          },
+          theme: {
+            color: "#0d6efd"
+          }
+        };
+
+        // Step 4: Open Razorpay popup
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (error) {
+        console.error("Checkout error:", error);
+        alert("An error occurred while processing your payment.");
+      }
+    });
+  });
+</script>
+{% endblock %}

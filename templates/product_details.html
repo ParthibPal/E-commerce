@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+
+      <!-- Product Card (Horizontal Layout) -->
+      <div class="card mb-4 shadow-sm">
+        <div class="row g-0">
+          <!-- Product Image -->
+          <div class="col-md-5">
+            <img src="{{ url_for('static', filename='images/' ~ product.image) }}"
+                 class="img-fluid rounded-start h-100 w-100 object-fit-cover"
+                 alt="{{ product.name }}">
+          </div>
+
+          <!-- Product Details -->
+          <div class="col-md-7">
+            <div class="card-body">
+              <h2 class="card-title text-success">{{ product.name }}</h2>
+              <p class="card-text"><strong>Description:</strong> {{ product.description }}</p>
+              <p class="card-text"><strong>Price:</strong> ₹{{ product.price }}</p>
+              <p class="card-text"><strong>Category:</strong> {{ product.category }}</p>
+              <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-success mt-3">Add to Cart</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review Section -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h4 class="text-success mb-4">Customer Reviews</h4>
+
+          {% if current_user.is_authenticated %}
+          <form method="POST" action="{{ url_for('add_review', product_id=product.id) }}">
+            <div class="mb-3">
+              <label for="rating" class="form-label">Rating</label>
+              <select name="rating" class="form-select" required>
+                <option value="">Select</option>
+                {% for i in range(1, 6) %}
+                  <option value="{{ i }}">{{ i }} ★</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="content" class="form-label">Your Review</label>
+              <textarea name="content" class="form-control" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Submit Review</button>
+          </form>
+          {% else %}
+            <p class="text-muted">Please <a href="{{ url_for('login') }}">log in</a> to leave a review.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Display Reviews -->
+      {% for review in product.reviews %}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <strong>{{ review.rating }} ★</strong>
+            <small class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</small>
+          </div>
+          <p class="mb-0"><em>{{ review.user.username }}</em>: {{ review.content }}</p>
+        </div>
+      </div>
+      {% else %}
+        <p class="text-muted">No reviews yet. Be the first to share your thoughts!</p>
+      {% endfor %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
