@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🛍️ E-Commerce Flask App – Setup & Usage Guide
 
 Welcome to the **E-Commerce Flask App**! This guide will walk you through setting up the project, running it locally, and using both admin and user functionalities without conflicts.
