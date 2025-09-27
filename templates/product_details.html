@@ -23,7 +23,7 @@
               <p class="card-text"><strong>Description:</strong> {{ product.description }}</p>
               <p class="card-text"><strong>Price:</strong> ₹{{ product.price }}</p>
               <p class="card-text"><strong>Category:</strong> {{ product.category }}</p>
-              <a href="{{ url_for('add_to_cart', product_id=str(product['_id'])) }}" class="btn btn-success mt-3">
+              <a href="{{ url_for('add_to_cart', product_id=product['_id']|string) }}" class="btn btn-success mt-3">
                 Add to Cart
             </a>            
             </div>

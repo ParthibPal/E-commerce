@@ -580,7 +580,8 @@ from functools import wraps
 from bson.objectid import ObjectId
 from forms import LoginForm, RegisterForm
 import razorpay
-
+from bson import ObjectId
+from bson.errors import InvalidId
 # ------------------ Load Environment Variables ------------------
 load_dotenv()
 
@@ -829,33 +830,44 @@ def logout():
 @app.route('/product/<product_id>')
 def product_detail(product_id):
     try:
-        product=mongo.db.products.find_one({"_id":ObjectId(product_id)})
-        if not product: abort(404)
+        obj_id = ObjectId(product_id)
+        product = mongo.db.products.find_one({"_id": obj_id})
+        if not product:
+            abort(404)
         return render_template("product_details.html", product=product)
-    except: abort(404)
+    except InvalidId:
+        abort(404)
 
 @app.route('/add_to_cart/<product_id>')
 @login_required
 def add_to_cart(product_id):
     try:
-        product=mongo.db.products.find_one({"_id":ObjectId(product_id)})
+        obj_id = ObjectId(product_id)
+        product = mongo.db.products.find_one({"_id": obj_id})
         if not product: abort(404)
-        existing=mongo.db.cart.find_one({"user_id":ObjectId(current_user.id),"product_id":product_id})
+
+        existing = mongo.db.cart.find_one({"user_id": ObjectId(current_user.id), "product_id": product_id})
         if existing:
-            mongo.db.cart.update_one({"_id":existing["_id"]},{"$inc":{"quantity":1}})
+            mongo.db.cart.update_one({"_id": existing["_id"]}, {"$inc": {"quantity": 1}})
         else:
             mongo.db.cart.insert_one({
-                "user_id":ObjectId(current_user.id),
-                "product_id":product_id,
-                "product_name":product["name"],
-                "product_image":product["image"],
-                "product_description":product["description"],
-                "product_price":product["price"],
-                "quantity":1
+                "user_id": ObjectId(current_user.id),
+                "product_id": product_id,
+                "product_name": product["name"],
+                "product_image": product["image"],
+                "product_description": product["description"],
+                "product_price": product["price"],
+                "quantity": 1
             })
-        flash(f"{product['name']} added","success")
+        flash(f"{product['name']} added", "success")
         return redirect(url_for('home'))
-    except: abort(500)
+
+    except InvalidId:
+        abort(404)
+    except Exception as e:
+        print("Add to cart error:", e)
+        abort(500)
+
 
 @app.route('/cart')
 @login_required
