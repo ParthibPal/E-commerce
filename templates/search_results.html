@@ -7,32 +7,44 @@
         {% for item in results %}
         <div class="col">
             <div class="card h-100 shadow-sm border-0 rounded-4">
-                <img src="{{ url_for('static', filename='images/' ~ item.image) }}" class="card-img-top rounded-top-4"
-                    style="height: 200px; object-fit: cover;" alt="{{ item.name }}">
+                
+                <!-- Product Image -->
+                <img src="{{ url_for('static', filename='images/' ~ item.get('image', 'default.jpg')) }}" 
+                     class="card-img-top rounded-top-4"
+                     style="height: 200px; object-fit: cover;" 
+                     alt="{{ item.get('name', 'Product') }}">
+
+                <!-- Card Body -->
                 <div class="card-body">
                     <h5 class="card-title fw-semibold text-dark">
-                        {% if item.id %}
-                        <a href="{{ url_for('product_detail', product_id=item.id) }}"
-                            class="text-decoration-none text-dark">
-                            {{ item.name }}
+                        {% if item.get('id') %}
+                        <a href="{{ url_for('product_detail', product_id=item.id) }}" class="text-decoration-none text-dark">
+                            {{ item.get('name', 'Unnamed Product') }}
                         </a>
                         {% else %}
-                        {{ item.name }}
+                        {{ item.get('name', 'Unnamed Product') }}
                         {% endif %}
                     </h5>
+
+                    <!-- Description -->
                     <p class="card-text text-muted small">
-                        {{ item.description[:100] if item.description else item.product_description[:100] }}...
+                        {{ (item.get('description') or item.get('product_description', ''))[:100] }}...
                     </p>
-                    <p class="card-text fw-bold text-success">₹{{ item.price }}</p>
-                    {% if item.quantity %}
+
+                    <!-- Price -->
+                    <p class="card-text fw-bold text-success">₹{{ item.get('price', 0) }}</p>
+
+                    <!-- Quantity & Total (if applicable) -->
+                    {% if item.get('quantity') %}
                     <p class="card-text text-secondary small">Quantity: {{ item.quantity }}</p>
                     <p class="card-text fw-bold text-dark">Total: ₹{{ item.price * item.quantity }}</p>
                     {% endif %}
                 </div>
-                {% if item.id %}
+
+                <!-- Card Footer -->
+                {% if item.get('id') %}
                 <div class="card-footer bg-transparent border-0 text-end">
-                    <a href="{{ url_for('product_detail', product_id=item.id) }}"
-                        class="btn btn-outline-primary btn-sm">
+                    <a href="{{ url_for('product_detail', product_id=item.id) }}" class="btn btn-outline-primary btn-sm">
                         View Product
                     </a>
                 </div>

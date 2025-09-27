@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+
 {% block content %}
 <div class="container py-4">
   <div class="row justify-content-center">
@@ -21,7 +23,9 @@
               <p class="card-text"><strong>Description:</strong> {{ product.description }}</p>
               <p class="card-text"><strong>Price:</strong> ₹{{ product.price }}</p>
               <p class="card-text"><strong>Category:</strong> {{ product.category }}</p>
-              <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-success mt-3">Add to Cart</a>
+              <a href="{{ url_for('add_to_cart', product_id=str(product['_id'])) }}" class="btn btn-success mt-3">
+                Add to Cart
+            </a>            
             </div>
           </div>
         </div>
@@ -34,6 +38,7 @@
 
           {% if current_user.is_authenticated %}
           <form method="POST" action="{{ url_for('add_review', product_id=product.id) }}">
+            {{ form.hidden_tag() }}
             <div class="mb-3">
               <label for="rating" class="form-label">Rating</label>
               <select name="rating" class="form-select" required>
@@ -56,19 +61,21 @@
       </div>
 
       <!-- Display Reviews -->
-      {% for review in product.reviews %}
-      <div class="card mb-3 shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between">
-            <strong>{{ review.rating }} ★</strong>
-            <small class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</small>
+      {% if product.reviews %}
+        {% for review in product.reviews %}
+        <div class="card mb-3 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <strong>{{ review.rating }} ★</strong>
+              <small class="text-muted">{{ review.created_at.strftime('%d %b %Y') }}</small>
+            </div>
+            <p class="mb-0"><em>{{ review.username }}</em>: {{ review.content }}</p>
           </div>
-          <p class="mb-0"><em>{{ review.user.username }}</em>: {{ review.content }}</p>
         </div>
-      </div>
+        {% endfor %}
       {% else %}
         <p class="text-muted">No reviews yet. Be the first to share your thoughts!</p>
-      {% endfor %}
+      {% endif %}
 
     </div>
   </div>

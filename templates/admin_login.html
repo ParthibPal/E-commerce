@@ -13,14 +13,18 @@
         <div class="card shadow">
           <div class="card-body">
             <h3 class="text-center mb-4">Admin Login</h3>
+
+            <!-- Flash messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
                 {% for category, message in messages %}
-                  <div class="alert alert-{{ category }}">{{ message }}</div>
+                  <div class="alert alert-{{ category }} mt-2">{{ message }}</div>
                 {% endfor %}
               {% endif %}
             {% endwith %}
-            <form method="POST" action="/admin_login">
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('admin_login') }}">
               <div class="mb-3">
                 <label class="form-label">Username</label>
                 <input type="text" name="username" class="form-control" placeholder="admin" required>

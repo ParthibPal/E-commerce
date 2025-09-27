@@ -65,71 +65,54 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    if (!checkoutBtn) return;
+document.addEventListener('DOMContentLoaded', function () {
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (!checkoutBtn) return;
 
-    checkoutBtn.addEventListener('click', async function () {
-      try {
-        // Pass total_price from Flask safely to JS
-        const totalPrice = `{{ total_price | default(0) | float }}`;
-        console.log("Total Price:", totalPrice);
+  checkoutBtn.addEventListener('click', async function () {
+    try {
+      const totalPrice = parseFloat(`{{ total_price | default(0) }}`) * 100; // convert to paise
+      const response = await fetch("/create_order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: totalPrice })
+      });
 
-        // Step 1: Create order on backend
-        const response = await fetch("/create_order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: totalPrice })
-        });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to create order.");
 
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to create order.");
-        }
+      const options = {
+        key: "{{ RAZORPAY_KEY_ID }}",
+        amount: data.amount,
+        currency: "INR",
+        name: "Local Service Marketplace",
+        description: "Checkout Payment",
+        order_id: data.id,
+        handler: async function(paymentResponse) {
+          const verifyRes = await fetch("/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(paymentResponse)
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyRes.ok) window.location.href = verifyData.redirect_url;
+          else alert("Payment verification failed. Please contact support.");
+        },
+        prefill: {
+          name: "{{ current_user.name if current_user.is_authenticated else '' }}",
+          email: "{{ current_user.email if current_user.is_authenticated else '' }}",
+          contact: ""
+        },
+        theme: { color: "#0d6efd" }
+      };
 
-        // Step 2: Configure Razorpay options
-        const options = {
-          key: "{{ RAZORPAY_KEY_ID }}",  // Razorpay key from Flask
-          amount: data.amount,           // Amount in paise
-          currency: "INR",
-          name: "Local Service Marketplace",
-          description: "Checkout Payment",
-          order_id: data.id,             // Razorpay order ID
-          handler: async function (paymentResponse) {
-            const verifyRes = await fetch("/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(paymentResponse)
-            });
-
-            const verifyData = await verifyRes.json();
-
-            if (verifyRes.ok) {
-              window.location.href = verifyData.redirect_url;  // 👈 Redirect to orders
-            } else {
-              alert("Payment verification failed. Please contact support.");
-            }
-          }
-          ,
-          prefill: {
-            name: "{{ current_user.name if current_user.is_authenticated else '' }}",
-            email: "{{ current_user.email if current_user.is_authenticated else '' }}",
-            contact: ""
-          },
-          theme: {
-            color: "#0d6efd"
-          }
-        };
-
-        // Step 4: Open Razorpay popup
-        const rzp = new Razorpay(options);
-        rzp.open();
-
-      } catch (error) {
-        console.error("Checkout error:", error);
-        alert("An error occurred while processing your payment.");
-      }
-    });
+      const rzp = new Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("An error occurred while processing your payment.");
+    }
   });
+});
 </script>
 {% endblock %}

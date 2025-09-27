@@ -4,10 +4,7 @@
     <h2 class="mb-4">Manage Products</h2>
 
     <!-- Add Product Button -->
-    <button class="btn btn-success mb-4" 
-            data-bs-toggle="modal" 
-            data-bs-target="#productModal"
-            data-mode="add">
+    <button class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#productModal" data-mode="add">
         Add Product
     </button>
 
@@ -50,8 +47,7 @@
                         <!-- Image -->
                         <div class="mb-3">
                             <label class="form-label">Image</label>
-                            <input type="file" class="form-control" name="image" id="productImage" 
-                                   {% raw %}{{ "required" if not product else "" }}{% endraw %}>
+                            <input type="file" class="form-control" name="image" id="productImage">
                             <small class="text-muted">Image is required when adding a new product.</small>
                         </div>
                     </div>
@@ -79,36 +75,30 @@
         </thead>
         <tbody id="productsTableBody">
             {% for product in products %}
-            <tr id="row-{{ product.id }}">
+            <tr id="row-{{ product._id }}">
                 <td>
                     {% if product.image %}
-                    <img src="{{ url_for('static', filename='images/' ~ product.image) }}" width="60" height="60" class="rounded">
+                        <img src="{{ url_for('static', filename='images/' ~ product.image) }}" width="60" height="60" class="rounded">
                     {% else %}
-                    <span class="text-muted">No Image</span>
+                        <img src="{{ url_for('static', filename='images/default.png') }}" width="60" height="60" class="rounded">
                     {% endif %}
                 </td>
-                <td>{{ product.name }}</td>
-                <td>{{ product.description }}</td>
-                <td>{{ product.category }}</td>
-                <td>₹{{ "%.2f"|format(product.price) }}</td>
+                <td>{{ product.name or "N/A" }}</td>
+                <td>{{ product.description or "N/A" }}</td>
+                <td>{{ product.category or "Uncategorized" }}</td>
+                <td>₹{{ "%.2f"|format(product.price or 0.0) }}</td>
                 <td>
                     <!-- Edit Button -->
-                    <button class="btn btn-warning btn-sm"
-                        data-bs-toggle="modal" data-bs-target="#productModal"
-                        data-mode="edit"
-                        data-id="{{ product.id }}"
-                        data-name="{{ product.name }}"
-                        data-description="{{ product.description }}"
-                        data-category="{{ product.category }}"
+                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#productModal"
+                        data-mode="edit" data-id="{{ product._id }}" data-name="{{ product.name }}"
+                        data-description="{{ product.description }}" data-category="{{ product.category }}"
                         data-price="{{ product.price }}">
                         Edit
                     </button>
 
                     <!-- Delete Button -->
-                    <button class="btn btn-danger btn-sm" 
-                        data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
-                        data-id="{{ product.id }}" 
-                        data-name="{{ product.name }}">
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
+                        data-id="{{ product._id }}" data-name="{{ product.name }}">
                         Delete
                     </button>
                 </td>
@@ -131,7 +121,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="deleteProduct()">Delete</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
             </div>
         </div>
     </div>
@@ -141,68 +131,88 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Handle Add/Edit Modal show
-const productModal = document.getElementById('productModal');
-productModal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const mode = button.getAttribute('data-mode');
+    // Handle Add/Edit Modal show
+    const productModal = document.getElementById('productModal');
+    productModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const mode = button.getAttribute('data-mode');
 
-    if (mode === "edit") {
-        document.getElementById("productModalTitle").innerText = "Edit Product";
-        document.getElementById("modalSubmitBtn").innerText = "Update Product";
+        if (mode === "edit") {
+            document.getElementById("productModalTitle").innerText = "Edit Product";
+            document.getElementById("modalSubmitBtn").innerText = "Update Product";
 
-        document.getElementById("productId").value = button.getAttribute('data-id');
-        document.getElementById("productName").value = button.getAttribute('data-name');
-        document.getElementById("productDescription").value = button.getAttribute('data-description');
-        document.getElementById("productCategory").value = button.getAttribute('data-category');
-        document.getElementById("productPrice").value = button.getAttribute('data-price');
-    } else {
-        document.getElementById("productModalTitle").innerText = "Add Product";
-        document.getElementById("modalSubmitBtn").innerText = "Add Product";
-        document.getElementById("productForm").reset();
-        document.getElementById("productId").value = "";
-    }
-});
+            document.getElementById("productId").value = button.getAttribute('data-id');
+            document.getElementById("productName").value = button.getAttribute('data-name');
+            document.getElementById("productDescription").value = button.getAttribute('data-description');
+            document.getElementById("productCategory").value = button.getAttribute('data-category');
+            document.getElementById("productPrice").value = button.getAttribute('data-price');
+        } else {
+            document.getElementById("productModalTitle").innerText = "Add Product";
+            document.getElementById("modalSubmitBtn").innerText = "Add Product";
+            document.getElementById("productForm").reset();
+            document.getElementById("productId").value = "";
+        }
+    });
 
-// Handle Delete Modal
-let productToDelete = null;
-const deleteModal = document.getElementById('deleteConfirmModal');
-deleteModal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    productToDelete = button.getAttribute('data-id');
-    document.getElementById('deleteProductName').innerText = button.getAttribute('data-name');
-});
+    // Handle Delete Modal
+    let productToDelete = null;
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
-// Delete Product
-async function deleteProduct() {
-    if (!productToDelete) return;
-    const response = await fetch(`/ecommerce/delete/₹{productToDelete}`, { method: "DELETE" });
-    if (response.ok) {
-        document.getElementById(`row-₹{productToDelete}`).remove();
-        productToDelete = null;
-        bootstrap.Modal.getInstance(deleteModal).hide();
-    } else {
-        alert("Failed to delete product.");
-    }
-}
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        productToDelete = button.getAttribute('data-id');
+        document.getElementById('deleteProductName').innerText = button.getAttribute('data-name');
+    });
 
-// Submit Form (Add/Edit)
-const productForm = document.getElementById("productForm");
-productForm.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const formData = new FormData(productForm);
-    const productId = document.getElementById("productId").value;
+    confirmDeleteBtn.addEventListener('click', async function() {
+        if (!productToDelete) return;
+        try {
+            const response = await fetch(`/ecommerce/delete/${productToDelete}`, { method: "DELETE" });
+            if (response.ok) {
+                const row = document.getElementById(`row-${productToDelete}`);
+                if (row) row.remove();
+                productToDelete = null;
+                bootstrap.Modal.getInstance(deleteModal).hide();
+            } else {
+                const errorText = await response.text();
+                console.error("Delete failed:", errorText);
+                alert("Failed to delete product. See console for details.");
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("An error occurred while deleting the product.");
+        }
+    });
 
-    let url = productId ? `/ecommerce/update/₹{productId}` : "/ecommerce/add";
-    let method = productId ? "PUT" : "POST";
+    // Submit Form (Add/Edit)
+    const productForm = document.getElementById("productForm");
+    const modalSubmitBtn = document.getElementById("modalSubmitBtn");
 
-    const response = await fetch(url, { method, body: formData });
+    productForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        modalSubmitBtn.disabled = true;
+        const formData = new FormData(productForm);
+        const productId = document.getElementById("productId").value;
 
-    if (response.ok) {
-        location.reload(); // reload to refresh table
-    } else {
-        alert("Failed to save product.");
-    }
-});
+        const url = productId ? `/ecommerce/update/${productId}` : "/ecommerce/add";
+        const method = productId ? "PUT" : "POST";
+
+        try {
+            const response = await fetch(url, { method, body: formData });
+            if (response.ok) {
+                location.reload();
+            } else {
+                const errorText = await response.text();
+                console.error("Product save failed:", errorText);
+                alert("Failed to save product. See console for details.");
+                modalSubmitBtn.disabled = false;
+            }
+        } catch (err) {
+            console.error("Product save error:", err);
+            alert("An error occurred while saving the product.");
+            modalSubmitBtn.disabled = false;
+        }
+    });
 </script>
 {% endblock %}

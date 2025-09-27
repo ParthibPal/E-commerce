@@ -15,6 +15,12 @@
       height: 100vh;
       text-align: center;
     }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -27,10 +33,10 @@
           <a href="{{ url_for('dashboard') }}" class="nav-link text-white">Dashboard</a>
         </li>
         <li class="nav-item mb-2">
-          <a href="{{ url_for('product') }}" class="nav-link text-white">Products</a>
+          <a href="{{ url_for('view_products') }}" class="nav-link text-white">Products</a>
         </li>
         <li class="nav-item mb-2">
-          <a href="{{ url_for('review') }}" class="nav-link text-white">View Reviews</a>
+          <a href="{{ url_for('view_reviews') }}" class="nav-link text-white">View Reviews</a>
         </li>
         <li class="nav-item mt-3">
           <a href="{{ url_for('admin_logout') }}" class="nav-link text-danger">Logout</a>
@@ -40,8 +46,45 @@
 
     <!-- Main content -->
     <main class="flex-grow-1">
+      {% block content %}
       <h2>Welcome Admin</h2>
       <p>Use the sidebar to edit products or view customer reviews.</p>
+
+      <!-- Example: Display MongoDB products -->
+      {% if products %}
+        <div class="row mt-4">
+          {% for product in products %}
+            <div class="col-md-4 mb-3">
+              <div class="card">
+                <img src="{{ url_for('static', filename='images/' ~ product['image']) }}" class="card-img-top" alt="{{ product['name'] }}">
+                <div class="card-body">
+                  <h5 class="card-title">{{ product['name'] }}</h5>
+                  <p class="card-text">{{ product['description'] }}</p>
+                  <p class="card-text"><strong>Price:</strong> ₹{{ product['price'] }}</p>
+                  <p class="card-text"><strong>Category:</strong> {{ product['category'] }}</p>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Example: Display MongoDB reviews -->
+      {% if reviews %}
+        <div class="mt-4">
+          <h5>Customer Reviews</h5>
+          <ul class="list-group">
+            {% for review in reviews %}
+              <li class="list-group-item">
+                <strong>User:</strong> {{ review['user_id'] }} <br>
+                <strong>Rating:</strong> {{ review['rating'] }} <br>
+                <strong>Content:</strong> {{ review['content'] }}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% endblock %}
     </main>
   </div>
 

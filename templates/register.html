@@ -1,18 +1,7 @@
 {% extends "base.html" %}
-<!-- 
-  This template extends 'base.html'.
-  That means it uses the common layout defined in base.html 
-  and only replaces the blocks defined here.
--->
-
 {% block title %}Register{% endblock %}
-<!-- 
-  This block sets the page title to "Register".
-  This value will be used inside the <title> tag in base.html.
--->
 
 {% block content %}
-<!-- Main content of the registration page -->
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
@@ -25,15 +14,10 @@
           <h2 class="text-center mb-4 fw-bold text-primary">Create an Account</h2>
 
           <!-- =================== FLASH MESSAGES =================== -->
-          <!-- Used to show success or error messages after form submission -->
           {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
               {% for category, message in messages %}
                 <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-                  <!-- 
-                    'success' flash will be green,
-                    any other flash type will be shown in red (danger)
-                  -->
                   {{ message }}
                   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -44,47 +28,31 @@
 
           <!-- =================== REGISTRATION FORM =================== -->
           <form method="POST" novalidate>
-            <!-- CSRF protection hidden field -->
             {{ form.hidden_tag() }}
 
             <!-- Username field -->
             <div class="mb-3">
-              {{ form.username.label(class="form-label") }} 
-              <!-- Label for the username input -->
-
+              {{ form.username.label(class="form-label") }}
               {{ form.username(class="form-control", placeholder="Enter your username") }}
-              <!-- Input field for username -->
-
               {% if form.username.errors %}
-                <!-- Display first validation error if any -->
                 <div class="text-danger small">{{ form.username.errors[0] }}</div>
               {% endif %}
             </div>
 
             <!-- Email field -->
             <div class="mb-3">
-              {{ form.email.label(class="form-label") }} 
-              <!-- Label for the email input -->
-
+              {{ form.email.label(class="form-label") }}
               {{ form.email(class="form-control", placeholder="Enter your email") }}
-              <!-- Input field for email -->
-
               {% if form.email.errors %}
-                <!-- Display first validation error if any -->
                 <div class="text-danger small">{{ form.email.errors[0] }}</div>
               {% endif %}
             </div>
 
             <!-- Password field -->
             <div class="mb-3">
-              {{ form.password.label(class="form-label") }} 
-              <!-- Label for the password input -->
-
+              {{ form.password.label(class="form-label") }}
               {{ form.password(class="form-control", placeholder="Enter your password") }}
-              <!-- Input field for password -->
-
               {% if form.password.errors %}
-                <!-- Display first validation error if any -->
                 <div class="text-danger small">{{ form.password.errors[0] }}</div>
               {% endif %}
             </div>
@@ -92,10 +60,6 @@
             <!-- Submit button -->
             <div class="d-grid">
               {{ form.submit(class_="btn btn-success btn-lg") }}
-              <!-- 
-                class_ is used here because 'class' is a reserved keyword in Python
-                'btn-success btn-lg' gives a big green button
-              -->
             </div>
           </form>
           <!-- ========================================================== -->
@@ -104,7 +68,6 @@
           <p class="text-center mt-4">
             Already have an account?
             <a href="{{ url_for('login') }}" class="text-decoration-none text-primary fw-semibold">Login here</a>.
-            <!-- url_for('login') dynamically generates the URL for the login route -->
           </p>
         </div>
       </div>

@@ -20,15 +20,58 @@
     <div id="sidebar" class="bg-dark text-white p-3" style="width: 220px;">
       <h4 class="mb-4">My Store Admin</h4>
       <ul class="nav flex-column">
-        <li class="nav-item mb-2"><a href="/products" class="nav-link text-white">Edit Products</a></li>
-        <li class="nav-item mb-2"><a href="/reviews" class="nav-link text-white">View Reviews</a></li>
-        <li class="nav-item mt-3"><a href="/admin_logout" class="nav-link text-danger">Logout</a></li>
+        <!-- MongoDB routes -->
+        <li class="nav-item mb-2">
+          <a href="{{ url_for('view_products') }}" class="nav-link text-white">Edit Products</a>
+        </li>
+        <li class="nav-item mb-2">
+          <a href="{{ url_for('view_reviews') }}" class="nav-link text-white">View Reviews</a>
+        </li>
+        <li class="nav-item mt-3">
+          <a href="{{ url_for('admin_logout') }}" class="nav-link text-danger">Logout</a>
+        </li>
       </ul>
     </div>
 
     <!-- Main Content -->
     <div class="flex-grow-1 p-4 bg-light">
-      {% block content %}{% endblock %}
+      {% block content %}
+      <!-- Example usage: MongoDB data passed from Flask backend -->
+      <!-- Products -->
+      {% if products %}
+        <div class="row">
+          {% for product in products %}
+            <div class="col-md-4 mb-4">
+              <div class="card">
+                <img src="{{ url_for('static', filename='images/' ~ product['image']) }}" class="card-img-top" alt="{{ product['name'] }}">
+                <div class="card-body">
+                  <h5 class="card-title">{{ product['name'] }}</h5>
+                  <p class="card-text">{{ product['description'] }}</p>
+                  <p class="card-text"><strong>Price:</strong> ₹{{ product['price'] }}</p>
+                  <p class="card-text"><strong>Category:</strong> {{ product['category'] }}</p>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Reviews -->
+      {% if reviews %}
+        <div class="mt-4">
+          <h5>Product Reviews</h5>
+          <ul class="list-group">
+            {% for review in reviews %}
+              <li class="list-group-item">
+                <strong>User:</strong> {{ review['user_id'] }} <br>
+                <strong>Rating:</strong> {{ review['rating'] }} <br>
+                <strong>Content:</strong> {{ review['content'] }}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% endblock %}
     </div>
   </div>
 </body>

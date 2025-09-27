@@ -16,75 +16,18 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
   <style>
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      background-color: #f8f9fa;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
-    .navbar {
-      background: linear-gradient(135deg, #43cea2, #185a9d);
-    }
-
-    .navbar-brand {
-      font-weight: bold;
-      font-size: 1.6rem;
-    }
-
-    main {
-      flex: 1;
-      padding-top: 80px;
-    }
-
-    .flash {
-      animation: fadeIn 0.6s ease-in-out;
-    }
-
-    .modal.fade .modal-dialog {
-      transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-      transform: translateY(-20px);
-      opacity: 0;
-    }
-
-    .modal.show .modal-dialog {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    footer {
-      background-color: #212529;
-      color: #ccc;
-    }
-
-    footer a {
-      color: #aaa;
-      margin: 0 8px;
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
+    html, body { height: 100%; margin: 0; }
+    body { display: flex; flex-direction: column; background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+    .navbar { background: linear-gradient(135deg, #43cea2, #185a9d); }
+    .navbar-brand { font-weight: bold; font-size: 1.6rem; }
+    main { flex: 1; padding-top: 80px; }
+    .flash { animation: fadeIn 0.6s ease-in-out; }
+    .modal.fade .modal-dialog { transition: transform 0.3s ease-out, opacity 0.3s ease-out; transform: translateY(-20px); opacity: 0; }
+    .modal.show .modal-dialog { transform: translateY(0); opacity: 1; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    footer { background-color: #212529; color: #ccc; }
+    footer a { color: #aaa; margin: 0 8px; text-decoration: none; }
+    footer a:hover { color: #fff; text-decoration: underline; }
   </style>
 </head>
 
@@ -92,21 +35,17 @@
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
-    <div class="container-fluid px-4 ">
-      <!-- Logo + Brand -->
+    <div class="container-fluid px-4">
       <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home') }}">
-        <img src="../static/images/shopping-bag.png" alt="favicon" class="img-fluid"
-          style="width: 32px; height: 32px; margin-right: 8px;">
+        <img src="{{ url_for('static', filename='images/shopping-bag.png') }}" alt="favicon" class="img-fluid" style="width:32px;height:32px;margin-right:8px;">
         My Store
       </a>
 
-      <!-- Mobile Toggle -->
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Collapsible Content -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 d-flex flex-column flex-lg-row gap-2 ms-4">
           <li class="nav-item">
@@ -123,10 +62,8 @@
         </ul>
 
         <!-- Search Bar -->
-        <form id="searchForm" class="d-flex flex-column flex-lg-row align-items-lg-center mb-2 mb-lg-0" role="search"
-          method="GET">
-          <input class="form-control me-lg-2 mb-2 mb-lg-0" list="productSuggestions" name="query"
-            placeholder="Search products..." aria-label="Search">
+        <form id="searchForm" class="d-flex flex-column flex-lg-row align-items-lg-center mb-2 mb-lg-0" role="search" method="GET">
+          <input class="form-control me-lg-2 mb-2 mb-lg-0" list="productSuggestions" name="query" placeholder="Search products..." aria-label="Search">
           <input type="hidden" name="page" value="{{ current_page }}">
           <datalist id="productSuggestions">
             <option value="Laptop">
@@ -139,7 +76,6 @@
             <i class="fas fa-search"></i>
           </button>
         </form>
-
 
         <!-- User Menu -->
         <ul class="navbar-nav ms-lg-3">
@@ -161,16 +97,15 @@
     </div>
   </nav>
 
-
   <!-- Main Content Area -->
   <main class="container my-4">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    {% for category, message in messages %}
-    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} flash" role="alert">
-      {{ message }}
-    </div>
-    {% endfor %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} flash" role="alert">
+        {{ message }}
+      </div>
+      {% endfor %}
     {% endif %}
     {% endwith %}
 
@@ -191,6 +126,7 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <!-- Search Results Modal -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -208,13 +144,10 @@
             const modal = new bootstrap.Modal(document.getElementById('searchModal'));
             modal.show();
           })
-          .catch(err => {
-            console.error('Search failed:', err);
-          });
+          .catch(err => console.error('Search failed:', err));
       });
     });
   </script>
-
 
   <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen-sm-down modal-xl modal-dialog-scrollable">
