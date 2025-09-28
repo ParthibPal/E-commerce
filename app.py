@@ -585,6 +585,7 @@ from bson.errors import InvalidId
 from forms import LoginForm, RegisterForm
 import razorpay
 from forms import ReviewForm
+from models import Review
 # ------------------ Load Environment Variables ------------------
 load_dotenv()
 
@@ -699,15 +700,46 @@ def view_products():
         flash("Failed to load products. Please try again later.", "danger")
         return render_template("admin_view_product.html", products=[])
 
-@app.route("/reviews")
+@app.route('/admin/reviews')
 @admin_required
 def view_reviews():
-    reviews = list(mongo.db.reviews.find({"product_id": product_id}))
+    review_obj = Review(mongo)  # Initialize your Review class
+    reviews = list(review_obj.collection.find())  # fetch all reviews
+
     for r in reviews:
-        user_doc = mongo.db.users.find_one({"_id": ObjectId(r["user_id"])})
+        # ------------------- User Lookup -------------------
+        user_doc = None
+        user_id = r.get("user_id")
+        if user_id:
+            try:
+                if isinstance(user_id, str):
+                    user_doc = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+                else:
+                    user_doc = mongo.db.users.find_one({"_id": user_id})
+            except:
+                user_doc = None
         r["username"] = user_doc["username"] if user_doc else "Anonymous"
-        r["created_at"] = datetime.fromtimestamp(r["created_at"])
-    product["reviews"] = reviews
+
+        # ------------------- Convert _id -------------------
+        r["id"] = str(r["_id"])
+
+        # ------------------- Format created_at -------------------
+        if r.get("created_at") and isinstance(r["created_at"], datetime):
+            r["created_at"] = r["created_at"].strftime("%d %B %Y, %I:%M %p")
+        else:
+            r["created_at"] = "N/A"
+
+    return render_template("admin_review.html", reviews=reviews)
+
+
+
+
+@app.route('/delete_review/<review_id>', methods=['POST'])
+@admin_required
+def delete_review(review_id):
+    mongo.db.reviews.delete_one({"_id": ObjectId(review_id)})
+    flash("Review deleted", "info")
+    return redirect(url_for('view_reviews'))
 
 
 # ------------------ Product API ------------------
@@ -897,31 +929,57 @@ def add_to_cart(product_id):
 @app.route('/cart')
 @login_required
 def cart():
-    items=list(mongo.db.cart.find({"user_id":ObjectId(current_user.id)}))
-    total=sum(i["quantity"]*i["product_price"] for i in items)
-    return render_template("cart.html", cart_items=items, total_price=total, RAZORPAY_KEY_ID=RAZORPAY_KEY_ID, current_page='cart')
+    # Fetch items from cart for current user
+    items = list(mongo.db.cart.find({"user_id": ObjectId(current_user.id)}))
+    
+    # Convert ObjectId to string for URL usage
+    for i in items:
+        i["id"] = str(i["_id"])
+    
+    # Calculate total price
+    total = sum(i["quantity"] * i["product_price"] for i in items)
+    
+    return render_template(
+        "cart.html",
+        cart_items=items,
+        total_price=total,
+        RAZORPAY_KEY_ID=RAZORPAY_KEY_ID,
+        current_page='cart'
+    )
+
+
 
 @app.route('/update_cart/<cart_id>', methods=['POST'])
 @login_required
 def update_cart(cart_id):
     try:
-        qty=int(request.form.get("quantity",1))
-        if qty <=0: qty=1
-        mongo.db.cart.update_one({"_id":ObjectId(cart_id),"user_id":ObjectId(current_user.id)},{"$set":{"quantity":qty}})
-        flash("Cart updated","success")
+        qty = int(request.form.get("quantity", 1))
+        if qty <= 0: qty = 1
+        mongo.db.cart.update_one(
+            {"_id": ObjectId(cart_id), "user_id": ObjectId(current_user.id)},
+            {"$set": {"quantity": qty}}
+        )
+        flash("Cart updated", "success")
+    except InvalidId:
+        flash("Invalid cart ID", "danger")
     except Exception as e:
-        flash("Failed to update cart","danger")
+        flash("Failed to update cart", "danger")
     return redirect(url_for('cart'))
 
 @app.route('/remove_from_cart/<cart_id>')
 @login_required
 def remove_from_cart(cart_id):
     try:
-        mongo.db.cart.delete_one({"_id":ObjectId(cart_id),"user_id":ObjectId(current_user.id)})
-        flash("Removed from cart","info")
+        mongo.db.cart.delete_one(
+            {"_id": ObjectId(cart_id), "user_id": ObjectId(current_user.id)}
+        )
+        flash("Removed from cart", "info")
+    except InvalidId:
+        flash("Invalid cart ID", "danger")
     except:
-        flash("Failed to remove item","danger")
+        flash("Failed to remove item", "danger")
     return redirect(url_for('cart'))
+
 
 @app.route('/checkout')
 @login_required

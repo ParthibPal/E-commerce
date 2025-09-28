@@ -1,46 +1,38 @@
 {% extends "admin_base.html" %}
+
 {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4">Customer Reviews</h2>
+    <h2 class="mb-4 text-center fw-bold">Customer Reviews</h2>
 
     {% if reviews %}
-        {% for review in reviews %}
-        <div class="card mb-3">
-            <div class="card-body">
-                <!-- Product name -->
-                <h5 class="card-title">{{ review.product_name or "Unknown Product" }}</h5>
-
-                <!-- Review content -->
-                <p class="card-text">{{ review.content or "No review content." }}</p>
-
-                <!-- Rating -->
-                <p class="card-text"><strong>Rating:</strong> {{ review.rating or 0 }} / 5</p>
-
-                <!-- Reviewer and date -->
-                <p class="card-text">
-                    <em>
-                    By {{ review.user_name or "Anonymous" }} 
-                    {% if review.created_at %}
-                        {% if review.created_at is string %}
-                            on {{ review.created_at }}
-                        {% else %}
-                            on {{ review.created_at.strftime("%d %B %Y, %I:%M %p") }}
-                        {% endif %}
-                    {% endif %}
-                    </em>
-                </p>
-
-                <!-- Delete button -->
-                <form method="POST" action="{{ url_for('delete_review', review_id=review._id) }}"
-                    onsubmit="return confirm('Delete this review?');">
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-
-            </div>
-        </div>
-        {% endfor %}
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Product ID</th>
+                    <th>Rating</th>
+                    <th>Review</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in reviews %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td class="text-center">{{ review.username }}</td>
+                    <td class="text-center">{{ review.product_id }}</td>
+                    <td class="text-center">{{ review.rating if review.rating else "N/A" }}</td>
+                    <td>{{ review.content if review.content else "No review content" }}</td>
+                    <td class="text-center">{{ review.created_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-        <p>No reviews yet.</p>
+        <p class="text-center mt-5 fw-semibold">No reviews found.</p>
     {% endif %}
 </div>
 {% endblock %}

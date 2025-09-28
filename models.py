@@ -28,7 +28,11 @@ class Product:
         return list(self.collection.find())
 
     def get_by_id(self, product_id):
-        return self.collection.find_one({"_id": ObjectId(product_id)})
+        product = self.collection.find_one({"_id": ObjectId(product_id)})
+        if product:
+            product["id"] = str(product["_id"])
+            return product
+
 
     def to_dict(self, data):
         data["id"] = str(data["_id"])
@@ -90,6 +94,7 @@ class Order:
 class Review:
     def __init__(self, mongo):
         self.collection = mongo.db.reviews
+        self.users = mongo.db.users  # to fetch username
 
     def add_review(self, user_id, product_id, content, rating):
         review = {
@@ -103,7 +108,13 @@ class Review:
         return str(result.inserted_id)
 
     def get_product_reviews(self, product_id):
-        return list(self.collection.find({"product_id": ObjectId(product_id)}))
+        reviews = list(self.collection.find({"product_id": ObjectId(product_id)}))
+        for r in reviews:
+            user_doc = self.users.find_one({"_id": r["user_id"]})
+            r["username"] = user_doc["username"] if user_doc else "Anonymous"
+            r["id"] = str(r["_id"])
+        return reviews
+
 
 # ============================== USER ==============================
 class User:

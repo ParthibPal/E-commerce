@@ -25,9 +25,11 @@
               <p class="card-text"><strong>Category:</strong> {{ product.get('category', 'Uncategorized') }}</p>
 
               <!-- POST Form for Add to Cart -->
-              <form action="{{ url_for('add_to_cart', product_id=product.get('_id')) }}" method="POST">
+              <!-- <form action="{{ url_for('add_to_cart', product_id=product.get('_id')) }}" method="POST">
                 <button type="submit" class="btn btn-success mt-3">Add to Cart</button>
-              </form>
+              </form> -->
+              <!-- POST Form for Add to Cart styled like old anchor -->
+      <a href="{{ url_for('add_to_cart', product_id=product['_id']) }}" class="btn btn-success mt-3">Add to Cart</a>
             </div>
           </div>
         </div>
