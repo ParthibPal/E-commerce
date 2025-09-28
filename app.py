@@ -568,6 +568,9 @@
 
 
 
+import datetime
+from itertools import product
+import traceback
 from flask import Flask, request, jsonify, redirect, url_for, render_template, flash, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -578,10 +581,10 @@ from waitress import serve
 import os, logging, time
 from functools import wraps
 from bson.objectid import ObjectId
+from bson.errors import InvalidId
 from forms import LoginForm, RegisterForm
 import razorpay
-from bson import ObjectId
-from bson.errors import InvalidId
+from forms import ReviewForm
 # ------------------ Load Environment Variables ------------------
 load_dotenv()
 
@@ -601,14 +604,14 @@ login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
-# ------------------ User Class for Flask-Login ------------------
+# ------------------ User Class ------------------
 class UserObject(UserMixin):
     def __init__(self, user_doc, is_admin=False):
         self.id = str(user_doc["_id"])
         self.username = user_doc.get("username")
         self.is_admin = is_admin
         self._doc = user_doc
-# Make sure this is above the admin_login route
+
 class AdminUser(UserMixin):
     def __init__(self, user_id, username, is_admin=True):
         self.id = str(user_id)
@@ -617,12 +620,16 @@ class AdminUser(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Check Admins first
-    admin_doc = mongo.db.Admin.find_one({"_id": ObjectId(user_id)})
+    try:
+        obj_id = ObjectId(user_id)
+    except InvalidId:
+        return None
+
+    admin_doc = mongo.db.Admin.find_one({"_id": obj_id})
     if admin_doc:
         return UserObject(admin_doc, is_admin=True)
-    # Check normal users
-    user_doc = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+
+    user_doc = mongo.db.users.find_one({"_id": obj_id})
     if user_doc:
         return UserObject(user_doc)
     return None
@@ -641,7 +648,6 @@ def admin_required(f):
     return decorated
 
 # ------------------ Routes ------------------
-
 @app.route('/')
 def home():
     products = list(mongo.db.products.find())
@@ -655,19 +661,13 @@ def admin_login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-
-        # Fetch admin from MongoDB
         admin_doc = mongo.db.Admin.find_one({"username": username})
-
-        # Simple plain-text password check
         if admin_doc and admin_doc.get("password") == password:
-            login_user(AdminUser(user_id=admin_doc["_id"], username=admin_doc["username"], is_admin=True))
+            login_user(AdminUser(admin_doc["_id"], admin_doc["username"]))
             flash("Logged in successfully!", "success")
             return redirect(url_for("dashboard"))
-
         flash("Invalid credentials", "danger")
     return render_template("admin_login.html")
-
 
 @app.route("/admin_logout")
 @admin_required
@@ -685,33 +685,30 @@ def dashboard():
 @admin_required
 def view_products():
     try:
-        # Fetch all products from MongoDB
         products = list(mongo.db.products.find())
-        
-        # Convert ObjectId to string and ensure all fields exist
         for p in products:
-            p["_id"] = str(p.get("_id", ""))
-            p["name"] = p.get("name", "No Name")
-            p["description"] = p.get("description", "No Description")
-            p["category"] = p.get("category", "Uncategorized")
-            p["price"] = float(p.get("price", 0.0))
-            p["image"] = p.get("image", "default.png")  # Provide default image if missing
-        
+            p["_id"] = str(p.get("_id",""))
+            p["name"] = p.get("name","No Name")
+            p["description"] = p.get("description","No Description")
+            p["category"] = p.get("category","Uncategorized")
+            p["price"] = float(p.get("price",0.0))
+            p["image"] = p.get("image","default.png")
         return render_template("admin_view_product.html", products=products)
-    
     except Exception as e:
         logging.error(f"Error fetching products: {e}")
         flash("Failed to load products. Please try again later.", "danger")
         return render_template("admin_view_product.html", products=[])
 
-
 @app.route("/reviews")
 @admin_required
 def view_reviews():
-    reviews = list(mongo.db.reviews.find())
+    reviews = list(mongo.db.reviews.find({"product_id": product_id}))
     for r in reviews:
-        r["_id"] = str(r["_id"])
-    return render_template("admin_review.html", reviews=reviews)
+        user_doc = mongo.db.users.find_one({"_id": ObjectId(r["user_id"])})
+        r["username"] = user_doc["username"] if user_doc else "Anonymous"
+        r["created_at"] = datetime.fromtimestamp(r["created_at"])
+    product["reviews"] = reviews
+
 
 # ------------------ Product API ------------------
 ALLOWED_EXTENSIONS = {'png','jpg','jpeg','gif'}
@@ -727,7 +724,7 @@ def add_product():
         return jsonify({"error":"All fields required"}),400
     try:
         price = float(data.get("price"))
-        if price<=0: return jsonify({"error":"Price must >0"}),400
+        if price <=0: return jsonify({"error":"Price must >0"}),400
     except: return jsonify({"error":"Invalid price"}),400
     filename = secure_filename(image_file.filename)
     if not allowed_file(filename):
@@ -779,16 +776,6 @@ def delete_product(product_id):
         return jsonify({"message":"Deleted"}),200
     except: return jsonify({"error":"Invalid ID"}),400
 
-# ------------------ Review API ------------------
-@app.route("/ecommerce/reviews/<review_id>/delete", methods=["POST"])
-@admin_required
-def delete_review(review_id):
-    try:
-        result=mongo.db.reviews.delete_one({"_id":ObjectId(review_id)})
-        flash("Deleted" if result.deleted_count else "Failed delete","success" if result.deleted_count else "danger")
-    except: flash("Invalid ID","danger")
-    return redirect(url_for('view_reviews'))
-
 # ------------------ User Auth ------------------
 @app.route('/register', methods=['GET','POST'])
 def register():
@@ -827,46 +814,84 @@ def logout():
     return redirect(url_for("login"))
 
 # ------------------ Product & Cart ------------------
-@app.route('/product/<product_id>')
+@app.route('/product/<product_id>', methods=['GET', 'POST'])
 def product_detail(product_id):
     try:
         obj_id = ObjectId(product_id)
         product = mongo.db.products.find_one({"_id": obj_id})
         if not product:
             abort(404)
-        return render_template("product_details.html", product=product)
-    except InvalidId:
-        abort(404)
 
-@app.route('/add_to_cart/<product_id>')
+        product['_id'] = str(product['_id'])
+        product['reviews'] = product.get('reviews', [])
+
+        form = ReviewForm()
+
+        if form.validate_on_submit():
+            review_data = {
+                "username": current_user.username,
+                "rating": int(form.rating.data),
+                "content": form.content.data
+            }
+            mongo.db.products.update_one(
+                {"_id": ObjectId(product_id)},
+                {"$push": {"reviews": review_data}}
+            )
+            return redirect(url_for('product_detail', product_id=product_id))
+
+        return render_template("product_details.html", product=product, form=form)
+
+    except Exception as e:
+        print("Product detail error:", e)
+        abort(500)
+
+@app.route('/add_to_cart/<product_id>', methods=["GET"])
 @login_required
 def add_to_cart(product_id):
+    from bson.errors import InvalidId
     try:
-        obj_id = ObjectId(product_id)
-        product = mongo.db.products.find_one({"_id": obj_id})
-        if not product: abort(404)
+        # Validate ObjectId
+        try:
+            obj_id = ObjectId(product_id)
+        except InvalidId:
+            flash("Invalid product ID.", "danger")
+            return redirect(url_for("home"))
 
-        existing = mongo.db.cart.find_one({"user_id": ObjectId(current_user.id), "product_id": product_id})
+        # Fetch product
+        product = mongo.db.products.find_one({"_id": obj_id})
+        if not product:
+            flash("Product not found.", "warning")
+            return redirect(url_for("home"))
+
+        # Safely get user ObjectId
+        try:
+            user_obj_id = ObjectId(current_user.id)
+        except InvalidId:
+            flash("Invalid user ID.", "danger")
+            return redirect(url_for("home"))
+
+        # Check if already in cart
+        existing = mongo.db.cart.find_one({"user_id": user_obj_id, "product_id": product_id})
         if existing:
             mongo.db.cart.update_one({"_id": existing["_id"]}, {"$inc": {"quantity": 1}})
         else:
             mongo.db.cart.insert_one({
-                "user_id": ObjectId(current_user.id),
+                "user_id": user_obj_id,
                 "product_id": product_id,
-                "product_name": product["name"],
-                "product_image": product["image"],
-                "product_description": product["description"],
-                "product_price": product["price"],
+                "product_name": product.get("name", "Unnamed"),
+                "product_image": product.get("image", "default.png"),
+                "product_description": product.get("description", ""),
+                "product_price": float(product.get("price", 0.0)),
                 "quantity": 1
             })
-        flash(f"{product['name']} added", "success")
+
+        flash(f"{product.get('name','Product')} added to cart.", "success")
         return redirect(url_for('home'))
 
-    except InvalidId:
-        abort(404)
     except Exception as e:
         print("Add to cart error:", e)
-        abort(500)
+        flash("Something went wrong adding the product to cart.", "danger")
+        return redirect(url_for('home'))
 
 
 @app.route('/cart')
@@ -879,23 +904,32 @@ def cart():
 @app.route('/update_cart/<cart_id>', methods=['POST'])
 @login_required
 def update_cart(cart_id):
-    qty=int(request.form["quantity"])
-    mongo.db.cart.update_one({"_id":ObjectId(cart_id),"user_id":ObjectId(current_user.id)},{"$set":{"quantity":qty}})
-    flash("Cart updated","success")
+    try:
+        qty=int(request.form.get("quantity",1))
+        if qty <=0: qty=1
+        mongo.db.cart.update_one({"_id":ObjectId(cart_id),"user_id":ObjectId(current_user.id)},{"$set":{"quantity":qty}})
+        flash("Cart updated","success")
+    except Exception as e:
+        flash("Failed to update cart","danger")
     return redirect(url_for('cart'))
 
 @app.route('/remove_from_cart/<cart_id>')
 @login_required
 def remove_from_cart(cart_id):
-    mongo.db.cart.delete_one({"_id":ObjectId(cart_id),"user_id":ObjectId(current_user.id)})
-    flash("Removed from cart","info")
+    try:
+        mongo.db.cart.delete_one({"_id":ObjectId(cart_id),"user_id":ObjectId(current_user.id)})
+        flash("Removed from cart","info")
+    except:
+        flash("Failed to remove item","danger")
     return redirect(url_for('cart'))
 
 @app.route('/checkout')
 @login_required
 def checkout():
     items=list(mongo.db.cart.find({"user_id":ObjectId(current_user.id)}))
-    if not items: flash("Cart empty","warning"); return redirect(url_for('cart'))
+    if not items:
+        flash("Cart empty","warning")
+        return redirect(url_for('cart'))
     for item in items:
         mongo.db.orders.insert_one({
             "user_id":ObjectId(current_user.id),
@@ -906,7 +940,7 @@ def checkout():
             "quantity":item["quantity"],
             "ordered_at":time.time()
         })
-        mongo.db.cart.delete_one({"_id":item["_id"]})
+    mongo.db.cart.delete_many({"user_id":ObjectId(current_user.id)})
     flash("Order placed","success")
     return redirect(url_for('orders'))
 
@@ -914,21 +948,26 @@ def checkout():
 @login_required
 def orders():
     user_orders=list(mongo.db.orders.find({"user_id":ObjectId(current_user.id)}).sort("ordered_at",-1))
+    for o in user_orders: o["_id"]=str(o["_id"])
     return render_template("orders.html", orders=user_orders, current_page='order')
 
 @app.route('/add-review/<product_id>', methods=['POST'])
 @login_required
 def add_review(product_id):
-    content=request.form.get("content")
-    rating=int(request.form.get("rating"))
-    mongo.db.reviews.insert_one({
-        "user_id":ObjectId(current_user.id),
-        "product_id":product_id,
-        "content":content,
-        "rating":rating,
-        "created_at":time.time()
-    })
-    flash("Review submitted","success")
+    try:
+        content=request.form.get("content","")
+        rating=int(request.form.get("rating",0))
+        rating = max(0,min(5,rating))
+        mongo.db.reviews.insert_one({
+            "user_id":ObjectId(current_user.id),
+            "product_id":product_id,
+            "content":content,
+            "rating":rating,
+            "created_at":time.time()
+        })
+        flash("Review submitted","success")
+    except:
+        flash("Failed to submit review","danger")
     return redirect(url_for('product_detail', product_id=product_id))
 
 # ------------------ Razorpay Integration ------------------
@@ -936,7 +975,7 @@ def add_review(product_id):
 def create_order():
     data=request.get_json()
     try:
-        amount=int(float(data.get("amount"))*100)
+        amount=int(float(data.get("amount",0))*100)
         if amount<=0: return jsonify({"error":"Invalid amount"}),400
         order=razorpay_client.order.create({
             "amount":amount,"currency":"INR","payment_capture":"1","receipt":f"order_rcpt_{int(time.time())}"

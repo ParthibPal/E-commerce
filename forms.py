@@ -2,7 +2,7 @@
 from flask_wtf import FlaskForm
 
 # Importing field types for forms
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import SelectField, StringField, PasswordField, SubmitField, TextAreaField
 
 # Importing validation classes for form validation
 from wtforms.validators import InputRequired, Length, Email, Regexp
@@ -89,3 +89,16 @@ class LoginForm(FlaskForm):
 
     # Submit button for logging in
     submit = SubmitField("Login")
+
+
+class ReviewForm(FlaskForm):
+    rating = SelectField(
+        "Rating",
+        choices=[(str(i), f"{i} ★") for i in range(1, 6)],
+        validators=[InputRequired(message="Please select a rating.")]
+    )
+    content = TextAreaField(
+        "Your Review",
+        validators=[InputRequired(message="Review cannot be empty.")]
+    )
+    submit = SubmitField("Submit Review")
