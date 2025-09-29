@@ -20,7 +20,8 @@ class Product:
             "price": price,
             "image": image,
             "category": category,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+            "reviews": []  # Initialize empty reviews list
         })
         return str(result.inserted_id)
 
@@ -32,7 +33,7 @@ class Product:
         if product:
             product["id"] = str(product["_id"])
             return product
-        
+
     def search(self, query):
         results = self.collection.find({
             "$or": [
@@ -42,14 +43,43 @@ class Product:
             ]
         })
         results_list = list(results)
-        # print("Search results found:", len(results_list))  # ✅ This will work
         return results_list
-
-
 
     def to_dict(self, data):
         data["id"] = str(data["_id"])
         return data
+
+    # ✅ Add a new review to a product
+    def add_review(self, product_id, username, rating, content):
+        review = {
+            "username": username,
+            "rating": rating,
+            "content": content,
+            "status": "pending",
+            "created_at": datetime.utcnow()
+        }
+        self.collection.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$push": {"reviews": review}}
+        )
+
+    # ✅ Get all pending reviews across products
+    def get_pending_reviews(self):
+        pending = []
+        for product in self.collection.find():
+            for review in product.get("reviews", []):
+                if review.get("status") == "pending":
+                    review["product_id"] = str(product["_id"])
+                    review["product_name"] = product.get("name")
+                    pending.append(review)
+        return pending
+
+    # ✅ Update review status (approve/reject)
+    def update_review_status(self, product_id, username, new_status):
+        self.collection.update_one(
+            {"_id": ObjectId(product_id), "reviews.username": username},
+            {"$set": {"reviews.$.status": new_status}}
+        )
 
 # ============================== CART ==============================
 class Cart:

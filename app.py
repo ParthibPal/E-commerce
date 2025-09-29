@@ -569,6 +569,7 @@
 
 
 import datetime
+from datetime import datetime
 from itertools import product
 import traceback
 from flask import Flask, request, jsonify, redirect, url_for, render_template, flash, abort
@@ -703,43 +704,59 @@ def view_products():
 @app.route('/admin/reviews')
 @admin_required
 def view_reviews():
-    review_obj = Review(mongo)  # Initialize your Review class
-    reviews = list(review_obj.collection.find())  # fetch all reviews
+    product_model = Product(mongo)
+    reviews = []
 
-    for r in reviews:
-        # ------------------- User Lookup -------------------
-        user_doc = None
-        user_id = r.get("user_id")
-        if user_id:
-            try:
-                if isinstance(user_id, str):
-                    user_doc = mongo.db.users.find_one({"_id": ObjectId(user_id)})
-                else:
-                    user_doc = mongo.db.users.find_one({"_id": user_id})
-            except:
-                user_doc = None
-        r["username"] = user_doc["username"] if user_doc else "Anonymous"
-
-        # ------------------- Convert _id -------------------
-        r["id"] = str(r["_id"])
-
-        # ------------------- Format created_at -------------------
-        if r.get("created_at") and isinstance(r["created_at"], datetime):
-            r["created_at"] = r["created_at"].strftime("%d %B %Y, %I:%M %p")
-        else:
-            r["created_at"] = "N/A"
+    for product in product_model.get_all():
+        for review in product.get("reviews", []):
+            review["product_id"] = str(product["_id"])
+            review["product_name"] = product.get("name", "Unnamed Product")
+            review["id"] = review.get("_id", "")  # Optional: if you assign review IDs
+            review["created_at"] = review.get("created_at", "N/A")
+            reviews.append(review)
 
     return render_template("admin_review.html", reviews=reviews)
 
 
 
 
-@app.route('/delete_review/<review_id>', methods=['POST'])
+
+@app.route('/admin/delete-embedded-review', methods=['POST'])
 @admin_required
-def delete_review(review_id):
-    mongo.db.reviews.delete_one({"_id": ObjectId(review_id)})
-    flash("Review deleted", "info")
+def delete_embedded_review():
+    product_id = request.form.get('product_id')
+    username = request.form.get('username')
+    created_at = request.form.get('created_at')
+
+    # Convert created_at back to datetime if needed
+    try:
+        created_dt = datetime.strptime(created_at, "%d %B %Y, %I:%M %p")
+    except:
+        created_dt = None
+
+    query = {
+        "_id": ObjectId(product_id),
+        "reviews": {
+            "$elemMatch": {
+                "username": username,
+                "created_at": created_dt
+            }
+        }
+    }
+
+    update = {
+        "$pull": {
+            "reviews": {
+                "username": username,
+                "created_at": created_dt
+            }
+        }
+    }
+
+    mongo.db.products.update_one(query, update)
+    flash("Review deleted successfully", "info")
     return redirect(url_for('view_reviews'))
+
 
 
 # ------------------ Product API ------------------
@@ -863,7 +880,9 @@ def product_detail(product_id):
             review_data = {
                 "username": current_user.username,
                 "rating": int(form.rating.data),
-                "content": form.content.data
+                "content": form.content.data,
+                "status": "pending",  # Optional: for moderation
+                "created_at": datetime.utcnow()  # ✅ Add timestamp here
             }
             mongo.db.products.update_one(
                 {"_id": ObjectId(product_id)},
