@@ -32,6 +32,19 @@ class Product:
         if product:
             product["id"] = str(product["_id"])
             return product
+        
+    def search(self, query):
+        results = self.collection.find({
+            "$or": [
+                {"name": {"$regex": query, "$options": "i"}},
+                {"category": {"$regex": query, "$options": "i"}},
+                {"description": {"$regex": query, "$options": "i"}}
+            ]
+        })
+        results_list = list(results)
+        # print("Search results found:", len(results_list))  # ✅ This will work
+        return results_list
+
 
 
     def to_dict(self, data):

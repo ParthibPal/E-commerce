@@ -585,7 +585,7 @@ from bson.errors import InvalidId
 from forms import LoginForm, RegisterForm
 import razorpay
 from forms import ReviewForm
-from models import Review
+from models import Product, Review
 # ------------------ Load Environment Variables ------------------
 load_dotenv()
 
@@ -980,6 +980,28 @@ def remove_from_cart(cart_id):
         flash("Failed to remove item", "danger")
     return redirect(url_for('cart'))
 
+
+# Search operation
+@app.route('/search')
+def search():
+    query = request.args.get('query', '')
+    print("Query received:", query)
+    try:
+        page = int(request.args.get('page', 1))
+    except ValueError:
+        page = 1
+
+    per_page = 10  # You can adjust this
+
+    product_model = Product(mongo)
+    results = product_model.search(query)
+
+    # Pagination logic
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_results = results[start:end]
+
+    return render_template('search_results.html', products=paginated_results, query=query)
 
 @app.route('/checkout')
 @login_required
