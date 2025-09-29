@@ -1046,8 +1046,14 @@ def checkout():
 @app.route('/orders')
 @login_required
 def orders():
-    user_orders=list(mongo.db.orders.find({"user_id":ObjectId(current_user.id)}).sort("ordered_at",-1))
-    for o in user_orders: o["_id"]=str(o["_id"])
+    user_orders = list(mongo.db.orders.find({"user_id": ObjectId(current_user.id)}).sort("ordered_at", -1))
+
+    for o in user_orders:
+        o["_id"] = str(o["_id"])
+        # ✅ Convert float timestamp to datetime
+        if isinstance(o.get("ordered_at"), float):
+            o["ordered_at"] = datetime.fromtimestamp(o["ordered_at"])
+
     return render_template("orders.html", orders=user_orders, current_page='order')
 
 @app.route('/add-review/<product_id>', methods=['POST'])

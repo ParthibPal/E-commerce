@@ -7,28 +7,43 @@
 
   {% if orders %}
     {% for order in orders %}
-      {% for item in order.items %}
+      {% set items = order.get('items', [order]) %}  {# Handles both list and single-item formats #}
+      {% for item in items %}
       <div class="card mb-4 shadow-sm border-0 rounded-4">
         <div class="row g-0 align-items-center">
+          <!-- Product Image -->
           <div class="col-md-3 text-center p-3">
-            <img src="{{ url_for('static', filename='images/' ~ item.image) }}"
+            <img src="{{ url_for('static', filename='images/' ~ item.get('product_image', 'default.png')) }}"
                  class="img-thumbnail rounded-3 shadow-sm"
                  style="max-height: 150px; object-fit: cover;"
-                 alt="{{ item.name }}">
+                 alt="{{ item.get('product_name', 'Product') }}">
           </div>
+
+          <!-- Product Details -->
           <div class="col-md-6">
             <div class="card-body">
-              <h5 class="card-title fw-semibold text-dark">{{ item.name }}</h5>
-              <p class="card-text text-muted small">{{ item.description }}</p>
+              <h5 class="card-title fw-semibold text-dark">{{ item.get('product_name', 'Unnamed Product') }}</h5>
+              <p class="card-text text-muted small">{{ item.get('product_description', 'No description available.') }}</p>
               <p class="card-text mb-2">
-                <span class="badge bg-success">₹{{ item.price }}</span>
-                <span class="ms-2 text-secondary">x {{ item.quantity }}</span>
+                <span class="badge bg-success">₹{{ item.get('product_price', 0.0) }}</span>
+                <span class="ms-2 text-secondary">x {{ item.get('quantity', 1) }}</span>
               </p>
-              <p class="card-text fw-bold text-dark">Total: ₹{{ item.price * item.quantity }}</p>
+              <p class="card-text fw-bold text-dark">
+                Total: ₹{{ item.get('product_price', 0.0) * item.get('quantity', 1) }}
+              </p>
             </div>
           </div>
+
+          <!-- Order Date -->
           <div class="col-md-3 text-end pe-4">
-            <p class="text-muted small">Ordered on: {{ order.ordered_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+            <p class="text-muted small">
+              Ordered on:
+              {% if order.ordered_at %}
+                {{ order.ordered_at.strftime('%d %b %Y, %I:%M %p') }}
+              {% else %}
+                N/A
+              {% endif %}
+            </p>
           </div>
         </div>
       </div>
