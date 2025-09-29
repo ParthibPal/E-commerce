@@ -1080,12 +1080,17 @@ def add_review(product_id):
 def create_order():
     data=request.get_json()
     try:
-        amount=int(float(data.get("amount",0))*100)
+        amount = int(data.get("amount", 0))  # Already in paise
         if amount<=0: return jsonify({"error":"Invalid amount"}),400
         order=razorpay_client.order.create({
             "amount":amount,"currency":"INR","payment_capture":"1","receipt":f"order_rcpt_{int(time.time())}"
         })
-        return jsonify(order),200
+        return jsonify({
+            "id": order["id"],
+            "amount": order["amount"],
+            "currency": order["currency"]
+        }), 200
+
     except Exception as e:
         return jsonify({"error":str(e)}),500
 
@@ -1108,7 +1113,7 @@ def verify_payment():
                 "product_description":item['product_description'],
                 "product_price":item['product_price'],
                 "quantity":item['quantity'],
-                "ordered_at":time.time()
+                "ordered_at": datetime.utcnow()
             })
         mongo.db.cart.delete_many({"user_id":ObjectId(current_user.id)})
         return jsonify({"status":"success","redirect_url":url_for('orders')})

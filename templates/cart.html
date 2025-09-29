@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   checkoutBtn.addEventListener('click', async function () {
     try {
-      const totalPrice = parseFloat(`{{ total_price | default(0) }}`) * 100; // convert to paise
+      const totalPrice = Math.round(parseFloat(`{{ total_price | default(0) }}`) * 100); // ✅ convert rupees to paise
       const response = await fetch("/create_order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
