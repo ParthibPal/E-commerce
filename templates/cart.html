@@ -9,7 +9,7 @@
     <div class="row g-0 align-items-center">
       <!-- Product Image -->
       <div class="col-md-3 text-center p-3">
-        <img src="{{ url_for('static', filename='images/' ~ item.product_image) }}"
+        <img loading="lazy" src="{{ url_for('static', filename='images/' ~ item.product_image) }}"
           class="img-thumbnail rounded-3 shadow-sm" style="max-height: 150px; object-fit: cover;"
           alt="{{ item.product_name }}">
       </div>

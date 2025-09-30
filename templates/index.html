@@ -91,7 +91,7 @@
   {% for product in products %}
   <div class="product-card">
     <div class="card-image">
-      <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.name }}">
+      <img loading="lazy" src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.name }}">
     </div>
     <div class="card-content">
       <h3>{{ product.name }}</h3>
