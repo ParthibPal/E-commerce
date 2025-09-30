@@ -1,3 +1,7 @@
-build:
-  environment:
-    pythonVersion: 3.11
+services:
+  - type: web
+    name: ecommerce-app
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    autoDeploy: true
