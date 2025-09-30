@@ -1,0 +1,3 @@
+build:
+  environment:
+    pythonVersion: 3.11
