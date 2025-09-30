@@ -1,6 +1,9 @@
-**# 🛍️ E-Commerce Flask App – Setup & Usage Guide
+# 🛍️ E-Commerce Flask App – Setup & Live Guide
 
-Welcome to the **E-Commerce Flask App**! This guide will walk you through setting up the project, running it locally, and using both admin and user functionalities without conflicts.
+Welcome to the **E-Commerce Flask App**, a full-featured web application built with Flask, MongoDB, and Razorpay integration. Whether you're an admin managing products or a user browsing and shopping, this guide will help you set up the project locally and understand how to use all its features — with clear separation between admin and user roles.
+
+Explore the live app here: [https://e-commerce-kfpr.onrender.com](https://e-commerce-kfpr.onrender.com)
+
 
 ## ⚙️ Setup Instructions
 
