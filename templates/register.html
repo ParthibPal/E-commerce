@@ -2,18 +2,52 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(-45deg, #e3f2fd, #f1f8e9, #fff3e0, #fce4ec);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .register-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .register-card h2 {
+    font-weight: 700;
+    font-size: 2rem;
+  }
+
+  .register-card p {
+    font-size: 1rem;
+    color: #666;
+  }
+</style>
+
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-      
-      <!-- Card for registration form -->
-      <div class="card shadow rounded-4">
-        <div class="card-body p-4">
-          
-          <!-- Page heading -->
-          <h2 class="text-center mb-4 fw-bold text-primary">Create an Account</h2>
 
-          <!-- =================== FLASH MESSAGES =================== -->
+      <!-- Registration Card -->
+      <div class="card register-card p-4">
+        <div class="card-body">
+
+          <!-- Heading -->
+          <h2 class="text-center text-primary mb-3">Create an Account</h2>
+          <p class="text-center mb-4">Join us and get started</p>
+
+          <!-- Flash Messages -->
           {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
               {% for category, message in messages %}
@@ -24,54 +58,66 @@
               {% endfor %}
             {% endif %}
           {% endwith %}
-          <!-- ===================================================== -->
 
-          <!-- =================== REGISTRATION FORM =================== -->
+          <!-- Registration Form -->
           <form method="POST" novalidate>
             {{ form.hidden_tag() }}
 
-            <!-- Username field -->
+            <!-- Username Field -->
             <div class="mb-3">
-              {{ form.username.label(class="form-label") }}
-              {{ form.username(class="form-control", placeholder="Enter your username") }}
+              {{ form.username.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                {{ form.username(class="form-control", placeholder="Username") }}
+              </div>
               {% if form.username.errors %}
-                <div class="text-danger small">{{ form.username.errors[0] }}</div>
+                <div class="text-danger small mt-1">{{ form.username.errors[0] }}</div>
               {% endif %}
             </div>
 
-            <!-- Email field -->
+            <!-- Email Field -->
             <div class="mb-3">
-              {{ form.email.label(class="form-label") }}
-              {{ form.email(class="form-control", placeholder="Enter your email") }}
+              {{ form.email.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                {{ form.email(class="form-control", placeholder="Email") }}
+              </div>
               {% if form.email.errors %}
-                <div class="text-danger small">{{ form.email.errors[0] }}</div>
+                <div class="text-danger small mt-1">{{ form.email.errors[0] }}</div>
               {% endif %}
             </div>
 
-            <!-- Password field -->
+            <!-- Password Field -->
             <div class="mb-3">
-              {{ form.password.label(class="form-label") }}
-              {{ form.password(class="form-control", placeholder="Enter your password") }}
+              {{ form.password.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                {{ form.password(class="form-control", placeholder="Password") }}
+              </div>
               {% if form.password.errors %}
-                <div class="text-danger small">{{ form.password.errors[0] }}</div>
+                <div class="text-danger small mt-1">{{ form.password.errors[0] }}</div>
               {% endif %}
             </div>
 
-            <!-- Submit button -->
-            <div class="d-grid">
+            <!-- Submit Button -->
+            <div class="d-grid mt-4">
               {{ form.submit(class_="btn btn-success btn-lg") }}
             </div>
           </form>
-          <!-- ========================================================== -->
 
-          <!-- Redirect for existing users to login page -->
-          <p class="text-center mt-4">
+          <!-- Login Redirect -->
+          <p class="text-center mt-4 mb-0">
             Already have an account?
-            <a href="{{ url_for('login') }}" class="text-decoration-none text-primary fw-semibold">Login here</a>.
+            <a href="{{ url_for('login') }}" class="text-primary fw-semibold text-decoration-none">Login here</a>.
           </p>
+
         </div>
       </div>
+
     </div>
   </div>
 </div>
+
+<!-- Bootstrap Icons CDN -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 {% endblock %}

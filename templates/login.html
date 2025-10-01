@@ -2,18 +2,49 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(-45deg, #e3f2fd, #f1f8e9, #fff3e0, #fce4ec);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .login-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .login-card h2 {
+    font-weight: 700;
+    font-size: 2rem;
+  }
+
+  .login-card p {
+    font-size: 1rem;
+    color: #666;
+  }
+</style>
+
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
 
-      <!-- Login Card -->
-      <div class="card shadow rounded-4">
-        <div class="card-body p-4">
+      <div class="card login-card p-4">
+        <div class="card-body">
 
-          <!-- Heading -->
-          <h2 class="text-center mb-4 fw-bold text-primary">Login</h2>
+          <h2 class="text-center text-primary mb-3">Welcome Back</h2>
+          <p class="text-center mb-4">Log in to continue</p>
 
-          <!-- Flash Messages -->
           {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
               {% for category, message in messages %}
@@ -25,40 +56,39 @@
             {% endif %}
           {% endwith %}
 
-          <!-- Login Form -->
           <form method="POST" novalidate>
             {{ form.hidden_tag() }}
 
-            <!-- Email Field -->
             <div class="mb-3">
-              {{ form.email.label(class="form-label") }}
-              {{ form.email(class="form-control", placeholder="Enter your email") }}
+              {{ form.email.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                {{ form.email(class="form-control", placeholder="Email") }}
+              </div>
               {% if form.email.errors %}
-                <div class="text-danger small">{{ form.email.errors[0] }}</div>
+                <div class="text-danger small mt-1">{{ form.email.errors[0] }}</div>
               {% endif %}
             </div>
 
-            <!-- Password Field -->
             <div class="mb-3">
-              {{ form.password.label(class="form-label") }}
-              {{ form.password(class="form-control", placeholder="Enter your password") }}
+              {{ form.password.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                {{ form.password(class="form-control", placeholder="Password") }}
+              </div>
               {% if form.password.errors %}
-                <div class="text-danger small">{{ form.password.errors[0] }}</div>
+                <div class="text-danger small mt-1">{{ form.password.errors[0] }}</div>
               {% endif %}
             </div>
 
-            <!-- Submit Button -->
-            <div class="d-grid">
+            <div class="d-grid mt-4">
               {{ form.submit(class_="btn btn-success btn-lg") }}
             </div>
           </form>
 
-          <!-- Registration Link -->
-          <p class="text-center mt-4">
+          <p class="text-center mt-4 mb-0">
             Don't have an account?
-            <a href="{{ url_for('register') }}" class="text-decoration-none text-primary fw-semibold">
-              Register here
-            </a>.
+            <a href="{{ url_for('register') }}" class="text-primary fw-semibold text-decoration-none">Register here</a>.
           </p>
 
         </div>
