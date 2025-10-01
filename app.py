@@ -80,6 +80,11 @@ def admin_required(f):
     return decorated
 
 # ------------------ Routes ------------------
+@app.route("/healthz")
+def health_check():
+    return "OK", 200
+
+
 @app.route('/')
 def home():
     products = list(mongo.db.products.find())
