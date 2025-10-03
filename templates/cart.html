@@ -1,35 +1,90 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+  .cart-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeUp 0.5s ease forwards;
+    opacity: 0;
+  }
+
+  .cart-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  .cart-image {
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .cart-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #185a9d;
+  }
+
+  .cart-price {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #43cea2;
+  }
+
+  .cart-subtotal {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .checkout-btn {
+    transition: all 0.3s ease;
+    transform: scale(1);
+  }
+
+  .checkout-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  @keyframes fadeUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+</style>
+
 <div class="container py-5">
   <h2 class="text-center mb-5 fw-bold">🛒 Your Shopping Cart</h2>
 
   {% if cart_items %}
   {% for item in cart_items %}
-  <div class="card mb-4 border-0 shadow-sm rounded-4">
+  <div class="cart-card card mb-4 border-0 rounded-4">
     <div class="row g-0 align-items-center">
-      <!-- Product Image -->
       <div class="col-md-3 text-center p-3">
         <img loading="lazy" src="{{ url_for('static', filename='images/' ~ item.product_image) }}"
-          class="img-thumbnail rounded-3 shadow-sm" style="max-height: 150px; object-fit: cover;"
-          alt="{{ item.product_name }}">
+          class="cart-image img-fluid" alt="{{ item.product_name }}">
       </div>
-
-      <!-- Product Details -->
       <div class="col-md-6">
         <div class="card-body">
-          <h5 class="card-title text-primary fw-semibold">{{ item.product_name }}</h5>
-          <p class="card-text text-muted small">{{ item.product_description }}</p>
-          <p class="card-text mb-2">
-            <span class="badge bg-success">₹{{ item.product_price }}</span>
+          <h5 class="cart-title">{{ item.product_name }}</h5>
+          <p class="text-muted small">{{ item.product_description }}</p>
+          <p class="mb-2">
+            <span class="cart-price">₹{{ item.product_price }}</span>
             <span class="ms-2 text-secondary">x {{ item.quantity }}</span>
           </p>
-          <p class="card-text fw-bold text-dark">
-            Subtotal: ₹{{ item.quantity * item.product_price }}
-          </p>
+          <p class="cart-subtotal">Subtotal: ₹{{ item.quantity * item.product_price }}</p>
         </div>
       </div>
-
-      <!-- Update Quantity / Remove -->
       <div class="col-md-3 text-end pe-4">
         <form action="{{ url_for('update_cart', cart_id=item.id) }}" method="POST" class="mb-2">
           <div class="input-group input-group-sm">
@@ -37,17 +92,15 @@
             <button type="submit" class="btn btn-outline-success">Update</button>
           </div>
         </form>
-        
         <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}" class="btn btn-outline-danger btn-sm">Remove</a>
       </div>
     </div>
   </div>
   {% endfor %}
 
-  <!-- Total & Checkout Button -->
   <div class="text-end mt-5">
     <h4 class="fw-bold">Total: ₹{{ total_price }}</h4>
-    <button id="checkoutBtn" class="btn btn-primary btn-lg mt-3">
+    <button id="checkoutBtn" class="checkout-btn btn btn-primary btn-lg mt-3">
       <i class="fas fa-credit-card me-2"></i> Proceed to Checkout
     </button>
   </div>
@@ -60,58 +113,56 @@
   {% endif %}
 </div>
 
-<!-- Razorpay JS SDK -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  if (!checkoutBtn) return;
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (!checkoutBtn) return;
 
-  checkoutBtn.addEventListener('click', async function () {
-    try {
-      const totalPrice = Math.round(parseFloat(`{{ total_price | default(0) }}`) * 100); // ✅ convert rupees to paise
-      const response = await fetch("/create_order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: totalPrice })
-      });
+    checkoutBtn.addEventListener('click', async function () {
+      try {
+        const totalPrice = Math.round(parseFloat(`{{ total_price | default(0) }}`) * 100);
+        const response = await fetch("/create_order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: totalPrice })
+        });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to create order.");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Failed to create order.");
 
-      const options = {
-        key: "{{ RAZORPAY_KEY_ID }}",
-        amount: data.amount,
-        currency: "INR",
-        name: "Local Service Marketplace",
-        description: "Checkout Payment",
-        order_id: data.id,
-        handler: async function(paymentResponse) {
-          const verifyRes = await fetch("/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(paymentResponse)
-          });
-          const verifyData = await verifyRes.json();
-          if (verifyRes.ok) window.location.href = verifyData.redirect_url;
-          else alert("Payment verification failed. Please contact support.");
-        },
-        prefill: {
-          name: "{{ current_user.name if current_user.is_authenticated else '' }}",
-          email: "{{ current_user.email if current_user.is_authenticated else '' }}",
-          contact: ""
-        },
-        theme: { color: "#0d6efd" }
-      };
+        const options = {
+          key: "{{ RAZORPAY_KEY_ID }}",
+          amount: data.amount,
+          currency: "INR",
+          name: "Local Service Marketplace",
+          description: "Checkout Payment",
+          order_id: data.id,
+          handler: async function (paymentResponse) {
+            const verifyRes = await fetch("/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(paymentResponse)
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok) window.location.href = verifyData.redirect_url;
+            else alert("Payment verification failed. Please contact support.");
+          },
+          prefill: {
+            name: "{{ current_user.name if current_user.is_authenticated else '' }}",
+            email: "{{ current_user.email if current_user.is_authenticated else '' }}",
+            contact: ""
+          },
+          theme: { color: "#0d6efd" }
+        };
 
-      const rzp = new Razorpay(options);
-      rzp.open();
-    } catch (error) {
-      console.error("Checkout error:", error);
-      alert("An error occurred while processing your payment.");
-    }
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (error) {
+        console.error("Checkout error:", error);
+        alert("An error occurred while processing your payment.");
+      }
+    });
   });
-});
 </script>
 {% endblock %}
